@@ -13,7 +13,10 @@ while 1:
         print("exception during decode")
         continue
     if line == "MFG:reqmac":
+        # Write MAC0
         ser.write(b'0xBADBAD00\n')
+        # Write MAC1
+        ser.write(b'0xDEADBEEF\n')
     if line == "MFG:ekcertend":
         ekcertmode = False
         print("ekcert capture finished")
