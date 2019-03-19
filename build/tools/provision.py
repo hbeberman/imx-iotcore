@@ -2,10 +2,13 @@
 import serial
 import sys
 import codecs
+import os
+import struct
 
 ser = serial.Serial('COM4', 115200)
 ekcertmode = False
 ekcert = ""
+
 while 1:
     try:
         line = ser.readline().decode('UTF-8')[0:-2]
@@ -17,6 +20,18 @@ while 1:
         ser.write(b'0xBADBAD00\n')
         # Write MAC1
         ser.write(b'0xDEADBEEF\n')
+    if line == "MFG:devicecert":
+        print("MFG:devicecert recieved\n")
+        with open("c:\\temp\\cert.cer", "rb") as devicecert:
+            buf = devicecert.read()
+            print("devicecertsize: " + str(len(buf)))
+            ser.write(struct.pack('I', len(buf)))
+            ser.write(buf)
+            sum = 0
+            for i in range(len(buf)):
+                sum = sum + buf[i]
+            print("checksum: " + str(sum))
+        continue
     if line == "MFG:ekcertend":
         ekcertmode = False
         print("ekcert capture finished")
