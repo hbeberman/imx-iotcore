@@ -55,5 +55,18 @@ The default implementations return TEE_SUCCESS so they're no-ops on platforms wi
 
 ### fTPM Endorsement Key Certificate
 
-The fTPM Endorsement Key Certificate is the public key that can be used to identify a TPM based device.
+The fTPM Endorsement Key Certificate is the public key that can be used verify the authenticity of a TPM. In order to trust this EK Cert it must be extracted in the factory and must be stored by the OEM. The OEM then cross signs the EK Cert to assert that they trust it. This cross signed certificate should be persisted back onto the platform for convenience, but must also be avalable externally for future reference in-case the non-volatile storage on the device is reset.
+
+The UEFI DXE driver defined in Provisioning.c opens a handle to the fTPM driver and requests the Endorsement Key Certificate. It signals the manufacturing PC that it's about to send the EK Cert by sending the string "MFG:ekcertstart\n" over serial, it then sends the EK Cert over serial byte by byte in hexadecimal. Once the certificate is complete the device sends "MFG:ekcertend\n" to signal to the manufacturing PC that the certificate is complete.
+
+In anticipation of a cross signed cert, the device sends "MFG:devicecert\n" to the manufacturing host, then reads 4 bytes from serial to determine the length of buffer required for the cross signed certificate. The device then reads that many bytes from serial and writes the "ManufacturerDeviceCert" UEFI variable with this certificate buffer.
+
+### SMBIOS Customizations
+
+Some manufacturers may want to customize specific fields in the SMBIOS table with per-device values.
+
+The SMBIOS tables are constructed during boot in [imx-edk2-platforms PlatformSmbiosDxe.c](https://github.com/ms-iot/imx-edk2-platforms/blob/imx/Silicon/NXP/iMX6Pkg/Drivers/PlatformSmbiosDxe/PlatformSmbiosDxe.c). Most of the values are pulled from the Platform Configuration Database (PCD) which are static oer board configuration. Some are generated dynamically based on values in fuses or the build time of the firmware. Optionally values can be pulled out of UEFI variables with a fallback to default values if its not set. See the usage of RetrieveSmbiosVariable in PlatformSmbiosDxe.c as a reference.
+
+These UEFI variables can be populated by a host PC over serial much like the cross-signed certificate from the fTPM Endorsement Key Certificate section.
+
 ##First Boot
