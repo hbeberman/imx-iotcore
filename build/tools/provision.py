@@ -34,10 +34,6 @@ def sendstring( string ):
 def fatalerror( errormsg ):
     print(errormsg)
     print("REBOOTING SYSTEM")
-    print("REBOOTING SYSTEM")
-    print("REBOOTING SYSTEM")
-    print("REBOOTING SYSTEM")
-
 
 while 1:
     try:
@@ -50,6 +46,8 @@ while 1:
         ser.write(b'0xBADBAD00\n')
         # Write MAC1
         ser.write(b'0xDEADBEEF\n')
+    if line == "MFG:hostcheck":
+        ser.write(bytes([0x48, 0x47, 0x46, 0x4D])) #HGFM
     if line == "MFG:devicecert":
         print("MFG:devicecert recieved\n")
         sendfile("c:\\temp\\cert.cer")
@@ -77,10 +75,15 @@ while 1:
         with open("c:\\temp\\mfgek.txt", "a") as ekfile:
             ekfile.write(ekbase64)
         continue
+    if line == "MFG:success":
+        print("Device provisioning successful. Power off device now!")
+        continue
     if line == "MFG:ekcertfail":
         fatalerror("Failed to retrieve EK certificate!")
     if line == "MFG:devicecertfail":
         fatalerror("Failed to store device certificate!")
     if line == "MFG:smbiosfail":
         fatalerror("Failed to store smbios values!")
+    if line == "MFG:provisionedfail":
+        fatalerror("Failed to store provisioning status!")
     print(line)
