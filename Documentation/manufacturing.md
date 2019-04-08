@@ -65,8 +65,11 @@ In anticipation of a cross signed cert, the device sends "MFG:devicecert\n" to t
 
 Some manufacturers may want to customize specific fields in the SMBIOS table with per-device values.
 
-The SMBIOS tables are constructed during boot in [imx-edk2-platforms PlatformSmbiosDxe.c](https://github.com/ms-iot/imx-edk2-platforms/blob/imx/Silicon/NXP/iMX6Pkg/Drivers/PlatformSmbiosDxe/PlatformSmbiosDxe.c). Most of the values are pulled from the Platform Configuration Database (PCD) which are static oer board configuration. Some are generated dynamically based on values in fuses or the build time of the firmware. Optionally values can be pulled out of UEFI variables with a fallback to default values if its not set. See the usage of RetrieveSmbiosVariable in PlatformSmbiosDxe.c as a reference.
+The SMBIOS tables are constructed during boot in [imx-edk2-platforms PlatformSmbiosDxe.c](https://github.com/ms-iot/imx-edk2-platforms/blob/imx/Silicon/NXP/iMX6Pkg/Drivers/PlatformSmbiosDxe/PlatformSmbiosDxe.c). Most of the values are pulled from the Platform Configuration Database (PCD) which are static oer board configuration. Some are generated dynamically based on values in fuses or the build time of the firmware. Values can be pulled out of UEFI variables with a fallback to default values if its not set. See the usage of RetrieveSmbiosVariable in PlatformSmbiosDxe.c as a reference.
 
-These UEFI variables can be populated by a host PC over serial much like the cross-signed certificate from the fTPM Endorsement Key Certificate section.
+These UEFI variables can be populated by a host PC over serial from the Provisioning UEFI DXE driver.
 
 ##First Boot
+
+1) SPL boots to spl_board_manufacture.
+2) spl_board_manufacture 
