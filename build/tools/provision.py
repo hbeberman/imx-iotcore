@@ -49,18 +49,18 @@ while 1:
     if line == "MFG:hostcheck":
         ser.write(bytes([0x48, 0x47, 0x46, 0x4D])) #HGFM
     if line == "MFG:devicecert":
-        print("MFG:devicecert recieved\n")
         sendfile("c:\\temp\\cert.cer")
-    if line == "MFG:smbiosserialreq":
-        print("MFG:smbiosserialreq recieved\n")
+    if line == "MFG:smbiossystemserial":
         sendstring(b'RealSerialNumber123456789\n')
     if line == "MFG:ekcert":
-        print("MFG:ekcert recieved\n")
         data = ser.read(4)
         length = data[0] + (data[1] << 8) + (data[2] << 16) + (data[3] << 24)
+
         ekbytes = ser.read(length)
+
         data = ser.read(4)
         devicesum = data[0] + (data[1] << 8) + (data[2] << 16) + (data[3] << 24)
+
         hostsum = 0
         for i in ekbytes:
             hostsum = hostsum + i
@@ -68,8 +68,8 @@ while 1:
             fatalerror("Invalid EK certificate recieved!")
             continue
         # ekcert should be passed through limpet to confirm an actual length
-        # the properties of the ftpm may change the number from 652.
-        ekbase64 = codecs.encode(ekbytes, 'base64').decode()
+        # the properties of the ftpm may change the length.
+        ekbase64 = codecs.encode(ekbytes[10:326], 'base64').decode()
         print("fTPM Endorsement Key Certificate:")
         print(ekbase64)
         with open("c:\\temp\\mfgek.txt", "a") as ekfile:
@@ -78,14 +78,14 @@ while 1:
     if line == "MFG:success":
         print("Device provisioning successful. Power off device now!")
         continue
-    if line == "MFG:remotehostfail":
+    if line == "MFGF:remotehost":
         fatalerror("Device failed to communicate with host!")
-    if line == "MFG:ekcertfail":
-        fatalerror("Failed to retrieve EK certificate!")
-    if line == "MFG:devicecertfail":
-        fatalerror("Failed to store device certificate!")
-    if line == "MFG:smbiosfail":
-        fatalerror("Failed to store smbios values!")
-    if line == "MFG:provisionedfail":
-        fatalerror("Failed to store provisioning status!")
+    if line == "MFGF:ekcert":
+        fatalerror("Device failed to retrieve EK certificate!")
+    if line == "MFGF:devicecert":
+        fatalerror("Device failed to store device certificate!")
+    if line == "MFGF:smbios":
+        fatalerror("Device failed to store smbios values!")
+    if line == "MFGF:provisionedS":
+        fatalerror("Device failed to store provisioning status!")
     print(line)
