@@ -73,3 +73,74 @@ These UEFI variables can be populated by a host PC over serial from the Provisio
 
 1) SPL boots to spl_board_manufacture.
 2) spl_board_manufacture 
+
+
+## Board specific implementation
+
+### U-Boot
+
+U-Boot SPL is responsible for fusing the SRKH High Assurance Boot Key and the MAC address into SoC fuses.
+
+1) Copy the section within `#ifdef CONFIG_SPL_BOARD_MANUFACTURE` from board\solidrun\mx6cuboxi\mx6cuboxi.c. This includes `struct srkfdt` and `void spl_board_manufacture()`
+
+2) Set CONFIG_SPL_BOARD_MANUFACTURE in your board defconfig
+
+3) Build the firmware, deploy it to the device and attempt to boot. This firmware will not blow any of the fuses, it will just print out what it would blow. This can be used to verify that the SRKH and MAC addresses are correct before commiting them to the platform.
+
+4) Once you've verified that the values are correct, set CONFIG_MANUFACTURE_FUSES in your board defconfig so that spl_board_manufacture will blow the SRKH and MAC fuses.
+
+### OP-TEE
+
+The changes in OP-TEE are responsible for making sure the SoC will only ever provision a single eMMC RPMB with its secret key.
+
+1) Add CFG_FSL_SEC=y to your OP-TEE flags in your board makefile. [Example Makefile](build\firmware\HummingBoardEdge_iMX6Q_2GB\Makefile)
+
+2) If any portion of the GP1 or GP2 fuse words are already reserved for another use on your board then customize which fuse bit to use for the RPMB write lock. Open `core/drivers/fsl_sec/hw_key_blob.c` and modify both `RPMB_KEY_WRITE_LOCK_FUSE_BITS` and `RPMB_KEY_WRITE_LOCK_FUSE_WORD`
+
+3) When the fTPM tries to access the RPMB for the first time, OP-TEE will run through this flow and blow the fuse if the RPMB key write was successful. If the RPMB key is already provisioned then this flow is skipped entirely.
+
+### UEFI
+
+The changes in UEFI are responsible for the following:
+* Loading SMBIOS values from UEFI Variables.
+* Loading the Endorsement Key Certificate from the fTPM and saving it to a host computer.
+* Recieving a cross-signed EK Certificate to save into UEFI Variables on the device for easy access.
+* Recieving per-device SMBIOS values to save into UEFI Variables to be recalled on future boots.
+* Set the DeviceProvisioned variable so subsequent boots will not run this driver.
+
+1) Open `Silicon\NXP\iMX6Pkg\Drivers\PlatformSmbiosDxe\PlatformSmbiosDxe.c` and observe where RetrieveSmbiosVariable is called. This function tries to open a variable from UEFI variables and returns an allocated buffer with the value if successful. The table creation functions can be updated to pull additional values from UEFI variables. (`FakeSMBIOSDataInVolatileStorage` and `StoreSmbiosVariable` are used to prepare these values for retrieval until non-volatile UEFI variables are ready.)
+
+2) Open `Silicon\NXP\iMXPlatformPkg\Drivers\Provisioning\Provisioning.inf` and note that the driver is configured to have a depex on gEfiTcg2ProtocolGuid so that the driver is forced to load after the fTPM is available.
+
+3) Open `Silicon\NXP\iMXPlatformPkg\Drivers\Provisioning\Provisioning.c` and observe the `ProvisioningInitialize` function. This function calls each of the functions responsible for UEFI provisioning. You can extend `RecieveSmbiosValues` with additional RecieveBuffer and SetVariable calls to save more device-specific values from the manufacturing host.
+
+### imx-iotcore
+
+The imx-iotcore repository contains the makefile changes required to support SPL SRKH fusing, along with a simple Python script to demonstrate the role of a manufacturing host.
+
+
+1) Open `build\firmware\Common.mk` and observe the following section under `$(SPL_PUB_KEYED): $(UBOOT_OPTEE_FIT)`
+```makefile
+	dtc -I dtb -O dts -o temp-dt-spl.dts dt-spl.dtb
+	echo "/ { srkh { srkh-fuse = <" >> temp-dt-spl.dts
+	hexdump -e '/4 "0x"' -e '/4 "%X""\n"' < $(SRKH_FUSE_BIN) >> temp-dt-spl.dts
+	echo ">; }; };" >> temp-dt-spl.dts
+	dtc -I dts -O dtb -o dt-spl.dtb temp-dt-spl.dts
+	rm -f temp-dt-spl.dts
+```
+This section dumps the SPL device tree to a sources file, appends a new srkh section with the variable srkh-fuse, then fills srkh-fuse with the values output by NXP's Code Signing Tool when generating a set of High Assurance Boot Keys. It then recompiles the device tree, replaces the original, and deletes the intermediate device tree source file. This is the value used by SPL to fuse the SRKH onto the SoC and enable High Assurance Boot.
+
+2) Open `provision.py` and customize `ser = serial.Serial('COM4', 115200)` to match the COM port for your serial connection to the device. Note that the script is hardcoded to send some set values for MAC address and Serial Number.
+
+3) Run `pip install PySerial` in CMD to install the serial library.
+
+4) Run `python provision.py` to start the provisioning host.
+
+5) Boot a connected device running the manufacturing firmware.
+
+Features missing from a complete implementation:
+* A connection to an OEM database to assign per-device information such as MAC Addresses, Serial numbers, and other SMBIOS customizations.
+* A connection to an OEM database to save the Endorsement Key Certificates
+* Host-side cross-signing of the Endorsement Key Certificate to prove that the TPM is trusted by the OEM.
+* Factory integration to power off the device and start the next on successful provisioning or to raise an alert on failure.
+* Saving Secure Boot UEFI Variables to the device to enable secure boot. Easy to add but the signed boot critical drivers are not ready yet.
