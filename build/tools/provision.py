@@ -78,6 +78,8 @@ while 1:
     if line == "MFG:success":
         print("Device provisioning successful. Power off device now!")
         continue
+    if line == "MFG:remotehostfail":
+        fatalerror("Device failed to communicate with host!")
     if line == "MFG:ekcertfail":
         fatalerror("Failed to retrieve EK certificate!")
     if line == "MFG:devicecertfail":
