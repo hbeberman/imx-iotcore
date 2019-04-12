@@ -6,6 +6,7 @@ This document describes the first boot for a device being provisioned in a facto
 Assumptions:
 * The SD Card or eMMC has already been provisioned with the OS/Firmware image.
 * The device has an eMMC with RPMB to support secure storage for fTPM and Authenticated Variables.
+* The device being provisioned has an i.MX6 Quad SoC. Other SoCs will require fusing customziations.
 
 Missing features required for a complete provisioning implementation:
 * A connection to an OEM database to assign per-device information such as MAC addresses, Serial numbers, and other SMBIOS customizations.
@@ -58,7 +59,7 @@ U-Boot SPL is responsible for fusing the SRKH High Assurance Boot Key and the MA
 
 The changes in OP-TEE are responsible for making sure the SoC will only ever provision a single eMMC RPMB with its secret key.
 
-1) Add CFG_FSL_SEC=y to your OP-TEE flags in your board makefile. [Example Makefile](build\firmware\HummingBoardEdge_iMX6Q_2GB\Makefile)
+1) Add CFG_FSL_SEC=y and CFG_RPMB_KEY_WRITE_LOCK=y to your OP-TEE flags in your board makefile. [Example Makefile](build\firmware\HummingBoardEdge_iMX6Q_2GB\Makefile)
 
 2) If any portion of the GP1 or GP2 fuse words are already reserved for another use on your board then customize which fuse bit to use for the RPMB write lock. Open `core/drivers/fsl_sec/hw_key_blob.c` and modify both `RPMB_KEY_WRITE_LOCK_FUSE_BITS` and `RPMB_KEY_WRITE_LOCK_FUSE_WORD`
 
