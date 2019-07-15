@@ -177,9 +177,16 @@ OP-TEE is mostly board-independent. Right now, the only configuration that needs
         ---or---
         mx7-flavorlist = mx7dsabresd mx7dclsom mx7yourboard
 
-3. Edit `core/arch/arm/plat-imx/platform_config.h` and set `CONSOLE_UART_BASE` to the appropriate value for your platform.
+3. Add a configuraiton section in `core/arch/arm/plat-imx/conf.mk` to set CFG_DDR_SIZE and CFG_UART_BASE for your board. Use a board with a similar SoC for reference, if you can use the same values put your board name in the list otherwise create a new section.
 
-4. Follow the next section to set up a firmare build folder for your system. This will select the correct flags and make OP-TEE for you. If you need more debug output, you can customize OPTEE_FLAGS in the [Common Makefile](..//build/firmware/Common.mk) set CFG_TEE_CORE_DEBUG=y and CFG_TEE_CORE_LOG_LEVEL=4.
+        ifneq (,$(filter $(PLATFORM_FLAVOR),mx6qhmbedge mx6qyourboard))
+        CFG_DDR_SIZE ?= 0x80000000
+        CFG_UART_BASE ?= UART1_BASE
+        endif
+
+4. Edit `core/arch/arm/plat-imx/platform_config.h` and set `CONSOLE_UART_BASE` to the appropriate value for your platform.
+
+5. Follow the next section to set up a firmare build folder for your system. This will select the correct flags and make OP-TEE for you. If you need more debug output, you can customize OPTEE_FLAGS in the [Common Makefile](..//build/firmware/Common.mk) set CFG_TEE_CORE_DEBUG=y and CFG_TEE_CORE_LOG_LEVEL=4.
 
 # Setting up your build enviroment to build firmware_fit.merged
 
