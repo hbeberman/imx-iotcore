@@ -4,12 +4,13 @@ UBOOT_CONFIG=mx6cuboxi_nt_defconfig
 EDK2_DSC=HummingBoardEdge_iMX6Q_2GB
 EDK2_PLATFORM=SolidRun/HummingBoardEdge_iMX6Q_2GB
 EDK2_DEBUG_RELEASE=RELEASE
+EDK2_FLAGS=-D CONFIG_NOT_SECURE_UEFI=1
 
 FTPM_CRYPTO_PROVIDER= CFG_FTPM_USE_WOLF=n 
 AUTHVARS_CRYPTO_PROVIDER= CFG_AUTHVARS_USE_WOLF=n
 
-UBOOT_OPTEE_ITS=uboot_optee_unsigned.its
-UEFI_ITS=uefi_unsigned.its
+UBOOT_OPTEE_ITS=uboot_optee_ecc_signed.its
+UEFI_ITS=uefi_ecc_signed.its
 
 all: firmware_fit.merged firmwareversions.log
 
