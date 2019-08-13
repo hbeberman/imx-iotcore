@@ -52,6 +52,35 @@ copy build\board\%BOARDNAME%\%BOARDNAME%_ProductionOEMInput.xml %BSP_ROOT%\OEMIn
 copy build\board\%BOARDNAME%\%BOARDNAME%_FMFileList.xml %BSP_ROOT%\Packages\%BOARDNAME%FMFileList.xml >NUL
 copy build\board\%BOARDNAME%\InputFMs\%BOARDNAME%_DeviceFM.xml %BSP_ROOT%\Packages >NUL
 
+:: Scan imx-iotcore for additional drivers and copy them to Packages\Misc
+rmdir %BSP_ROOT%\Packages\Misc /s /Q
+mkdir %BSP_ROOT%\Packages\Misc\temp
+
+echo Copying additional .wm.xml files to BSP folder
+pushd %~dp0
+dir /S /B %REPO_ROOT%\driver\*.wm.xml > wmlist.txt
+FOR /f "delims="  %%i IN (wmlist.txt) DO (
+    find /c "%%~ni" %~dp0\SoCDrivers.txt >NUL 2>NUL || (copy %%i %BSP_ROOT%\Packages\Misc\temp)
+)
+del wmlist.txt
+popd
+
+echo Copying additional build output files to BSP folder
+pushd %BUILD_ROOT%
+xcopy * %BSP_ROOT%\Packages\Misc\temp /EXCLUDE:%~dp0\BSPDriverExclude.txt /S /F /Y
+popd
+
+echo Collapsing BSP folder output for additional drivers.
+pushd %BSP_ROOT%\Packages\Misc
+for /r %%i IN (*.*) DO (
+        xcopy %%i . /F /Y
+)
+popd
+
+rmdir %BSP_ROOT%\Packages\Misc\temp /s /Q
+:: Remove the Misc directory if it is empty
+rmdir %BSP_ROOT%\Packages\Misc
+
 if "%SOC%"=="iMX6" (
     goto ARM32
 )

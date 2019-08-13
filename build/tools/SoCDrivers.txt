@@ -1,0 +1,14 @@
+wm8731Lcodec.wm
+wm8962codec.wm
+imx6aud.wm
+imxaud.wm
+imxgpio.wm
+imxi2c.wm
+imxnetmini.wm
+mx6pep.wm
+imxpwm.wm
+imxusdhc.wm
+imxuart.wm
+imxecspi.wm
+OpteeTrEE.wm
+imx6dod.wm

@@ -91,6 +91,13 @@ Add-Content -Path GenerateFFU.bat -Encoding Ascii -Value "call BuildImage $NewBo
 
 Pop-Location
 
+# Add the new board to the BSPDriverExclude list so BSP generation wont copy board package folder twice.
+Push-Location -Path "$PSScriptRoot"
+
+Add-Content -Path BSPDriverExclude.txt -Encoding Ascii -Value "$NewBoard\"
+
+Pop-Location
+
 Write-Host "`n`nNew board package created in imx-iotcore\build\board\$NewBoard`n
 New firmware folder created in imx-iotcore\build\firmware\$NewBoard"
 
